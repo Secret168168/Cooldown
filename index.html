@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cooldown Timer – เว็บนับคูลดาวพร้อมเสียงแจ้งเตือน</title>
+  <style>
+    :root{
+      --bg:#0f1320; --card:#151a2b; --muted:#99a2c2; --text:#e7ecff; --accent:#6aa3ff; --accent-2:#8ef5c0; --danger:#ff7a7a; --warn:#ffd36a;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial; background:radial-gradient(1200px 800px at 10% 0%,#141a2d 0%,#0b0f1c 60%), var(--bg); color:var(--text)}
+    a{color:var(--accent)}
+    .container{max-width:1200px;margin:24px auto;padding:0 16px}
+    header{display:flex;gap:12px;align-items:center;margin-bottom:18px}
+    .badge{padding:4px 8px;border:1px solid #2a3353;border-radius:999px;color:var(--muted);font-size:12px}
+    .grid{display:grid;grid-template-columns:360px 1fr;gap:16px}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01)); border:1px solid #222a45;border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.3); padding:16px}
+    .title{font-weight:700;font-size:22px;margin:0 0 8px}
+    .muted{color:var(--muted);font-size:13px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    label{font-size:13px;color:#c9d3ff;margin-bottom:6px;display:block}
+    input[type="text"], input[type="number"], select{width:100%;padding:10px 12px;border:1px solid #2a3353;border-radius:12px;background:#0c1120;color:var(--text);outline:none}
+    input[type="file"]{width:100%;}
+    input[type="checkbox"]{transform:scale(1.1);accent-color:var(--accent)}
+    .hstack{display:flex;align-items:center;gap:8px}
+    .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:#10162a;border:1px solid #2a3353;border-radius:999px;margin:6px 6px 0 0}
+    .chip button{background:transparent;border:0;color:#b9c4ff;cursor:pointer}
+    .btn{border:0;border-radius:12px;padding:10px 14px;cursor:pointer;font-weight:600}
+    .btn-primary{background:linear-gradient(180deg,#3a7bff,#2e66d6);color:white}
+    .btn-ghost{background:#10162a;color:#cfe0ff;border:1px solid #2a3353}
+    .btn-danger{background:linear-gradient(180deg,#ff6a6a,#d64e4e);color:white}
+    .btn-warn{background:linear-gradient(180deg,#ffd36a,#e9b845);color:#171717}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .timer-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+    .tcard{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01)); border:1px solid #222a45;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+    .progress{height:8px;background:#0c1120;border:1px solid #283156;border-radius:999px;overflow:hidden}
+    .bar{height:100%;background:linear-gradient(90deg,#6aa3ff,#8ef5c0)}
+    .time{font-weight:800;font-size:30px;letter-spacing:1px}
+    .subtitle{font-size:12px;color:var(--muted)}
+    .row-btns{display:flex;gap:8px;flex-wrap:wrap}
+    .presets{display:flex;flex-wrap:wrap;gap:10px}
+    .preset{padding:8px 10px;background:#10162a;border:1px solid #2a3353;border-radius:10px;display:flex;gap:8px;align-items:center}
+    .kbd{border:1px solid #2a3353;border-bottom-width:3px; border-radius:8px;padding:2px 6px;font-size:12px;color:#b8c1e8}
+    .footer{margin-top:20px;color:#8b94b6;font-size:12px;text-align:center}
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1 style="margin:0;font-size:28px;font-weight:800;letter-spacing:.3px">🕒 Cooldown BY.Exsos High 🕒</h1>
+    
+  </header>
+  <div class="grid">
+    <section class="card">
+      <h2 class="title">ตั้งค่าคูลดาว</h2>
+      <p class="muted">พิมพ์เวลาได้หลายรูปแบบ เช่น <strong>1:30</strong>, <strong>90s</strong>, <strong>2m30s</strong>, <strong>1h 5m</strong></p>
+      <div class="row">
+        <div>
+          <label>ชื่อคูลดาว</label>
+          <input id="name" type="text" placeholder="เช่น ปล้นร้าน, ซ่อมรถ, ฯลฯ" />
+        </div>
+        <div>
+          <label>ระยะเวลาทั้งหมด</label>
+          <input id="duration" type="text" placeholder="เช่น 5m หรือ 4:30" />
+        </div>
+      </div>
+
+      <div style="margin-top:10px">
+        <label>จุดที่ต้องการให้แจ้งเตือน (เมื่อ <u>เหลือ</u> เวลาเท่านี้)</label>
+        <div class="hstack">
+          <input id="alertInput" type="text" placeholder="ไม่ใส่ก็ได้" />
+          <button id="addAlert" class="btn btn-ghost">+ เพิ่ม</button>
+          <button id="clearAlerts" class="btn btn-danger">ล้างจุด</button>
+        </div>
+        <div id="alertChips"></div>
+       
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <div>
+          <label>เสียงแจ้งเตือน</label>
+          <select id="sound">
+            <option value="beep">บี๊บ (สั้น)</option>
+            <option value="bell">กระดิ่ง</option>
+            <option value="alarm">ไซเรนสั้น</option>
+            <option value="thunder">Iframe The Thunder – Netflix OST</option>
+            <option value="custom">อัปโหลดไฟล์เสียง...</option>
+          </select>
+        </div>
+        <div>
+          <label>ระดับเสียง</label>
+          <input id="volume" type="range" min="0" max="100" value="80" />
+        </div>
+      </div>
+      <div id="customFileWrap" style="display:none;margin-top:8px">
+        <label>เลือกไฟล์เสียง (mp3/wav/ogg)</label>
+        <input id="customFile" type="file" accept="audio/*" />
+      </div>
+
+      <div class="row" style="margin-top:6px">
+        <label class="hstack"><input id="repeat" type="checkbox" /> ทำซ้ำอัตโนมัติหลังครบเวลา</label>
+        <label class="hstack"><input id="notify" type="checkbox" /> เปิดแจ้งเตือนเดสก์ท็อป</label>
+      </div>
+
+      <div class="row-btns" style="margin-top:12px">
+        <button id="testSound" class="btn btn-warn">ทดสอบเสียง</button>
+        <button id="create" class="btn btn-primary">+ สร้างตัวจับเวลา</button>
+        <button id="savePreset" class="btn btn-ghost">บันทึกพรีเซ็ต</button>
+        <button id="stopAlert" class="btn btn-danger">หยุดเสียงแจ้งเตือน</button>
+      </div>
+
+      <div style="margin-top:14px">
+        <h3 style="margin:8px 0 6px;font-size:16px">พรีเซ็ต</h3>
+        <div id="presetList" class="presets"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="title">ตัวจับเวลาที่ทำงานอยู่</h2>
+
+      <div id="timerList" class="timer-list"></div>
+    </section>
+  </div>
+
+</div>
+
+<script>
+(()=>{
+  // ===== Utilities =====
+  const $ = (sel)=>document.querySelector(sel);
+  const $$ = (sel)=>Array.from(document.querySelectorAll(sel));
+  const fmt = (sec)=>{
+    sec = Math.max(0, Math.round(sec));
+    const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+    if(h>0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    return `${m}:${String(s).padStart(2,'0')}`;
+  }
+  function parseTimeToSec(raw){
+    if(!raw) return 0;
+    let s = String(raw).trim().toLowerCase();
+    if(s.includes(':')){
+      const parts = s.split(':').map(x=>parseInt(x||'0',10));
+      if(parts.length===3) return parts[0]*3600+parts[1]*60+parts[2];
+      if(parts.length===2) return parts[0]*60+parts[1];
+    }
+    let total=0;
+    const tokens = s.match(/\d+\s*(h|hr|hour|m|min|s|sec|วิ|นาที|ช|น)?/gi);
+    if(tokens){
+      for(const t of tokens){
+        const m = t.match(/(\d+)\s*(h|hr|hour|ช)?|(\d+)\s*(m|min|นาที|น)?|(\d+)\s*(s|sec|วิ)?/i);
+        if(m){
+          if(m[1]) total += parseInt(m[1],10)*3600;
+          else if(m[3]) total += parseInt(m[3],10)*60;
+          else if(m[5]) total += parseInt(m[5],10);
+        }
+      }
+      if(total>0) return total;
+    }
+    if(/^\d+$/.test(s)) return parseInt(s,10);
+    const m2 = s.match(/^(\d+)\s*(s|sec)$/i); if(m2) return parseInt(m2[1],10);
+    const m3 = s.match(/^(\d+)\s*(m|min)$/i); if(m3) return parseInt(m3[1],10)*60;
+    const m4 = s.match(/^(\d+)\s*(h|hr|hour)$/i); if(m4) return parseInt(m4[1],10)*3600;
+    return 0;
+  }
+  const uid = ()=>'t_'+Math.random().toString(36).slice(2,9);
+
+  // ===== Sound Files =====
+  // วางไฟล์ mp3 นี้ไว้โฟลเดอร์เดียวกับไฟล์ HTML
+  const thunderURL = "Iframe The Thunder - Ost.สงคราม ส่งด่วน [Official Audio] _ Netflix [6h_Tn6sgx4Y].mp3";
+
+  // ===== Sound Engine (returns stopper per play) =====
+  let audioCtx = null;
+  const ensureCtx = ()=>{
+    try{ audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+    return audioCtx
+  }
+
+  // play pack keeps handles to stop later
+  const soundHandles = new Map(); // timerId -> { stop:fn }
+
+  function playBeepPattern(type='beep', vol=0.8){
+    const ctx = ensureCtx();
+    if(!ctx) return {stop:()=>{}};
+    const nodes = [];
+    const mk = (freq=880, len=0.18, delayMs=0)=>{
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type='sine';
+      osc.frequency.value=freq;
+      gain.gain.value=Math.max(0, Math.min(1, vol))*0.2;
+      osc.connect(gain); gain.connect(ctx.destination);
+      const startAt = ctx.currentTime + (delayMs/1000);
+      const endAt = startAt + len;
+      osc.start(startAt);
+      gain.gain.setValueAtTime(gain.gain.value, startAt);
+      gain.gain.exponentialRampToValueAtTime(0.0001, endAt);
+      osc.stop(endAt+0.01);
+      nodes.push(osc, gain);
+    }
+    if(type==='beep'){
+      mk(1000,0.15,0);
+    }else if(type==='bell'){
+      mk(1200,0.08,0);
+      mk(800,0.12,120);
+    }else if(type==='alarm'){
+      mk(900,0.12,0);
+      mk(600,0.12,140);
+      mk(900,0.12,280);
+    }
+    const stop = ()=>{
+      try{
+        nodes.forEach(n=>{
+          if(n.disconnect) n.disconnect();
+          if(n.stop) { try{ n.stop(0); }catch(e){} }
+        });
+      }catch(e){}
+    }
+    return {stop};
+  }
+
+  let customURL = null;
+  async function playCustomOnce(vol=0.8){
+    if(!customURL) return playBeepPattern('beep', vol);
+    const a = new Audio(customURL);
+    a.volume = Math.max(0, Math.min(1, vol));
+    try{ await a.play(); }catch(e){}
+    const stop = ()=>{ try{ a.pause(); a.currentTime = 0; }catch(e){} }
+    return {stop};
+  }
+
+  async function playThunder(vol=0.8){
+    const a = new Audio(thunderURL);
+    a.volume = Math.max(0, Math.min(1, vol));
+    try{ await a.play(); }catch(e){}
+    const stop = ()=>{ try{ a.pause(); a.currentTime=0; }catch(e){} }
+    return {stop};
+  }
+
+  // ===== State =====
+  const state = {
+    alerts: new Set([0]),
+    timers: [],
+    presets: JSON.parse(localStorage.getItem('cd_presets')||'[]'),
+    notify: false,
+  }
+  function savePresets(){ localStorage.setItem('cd_presets', JSON.stringify(state.presets)); renderPresets(); }
+
+  // ===== DOM refs =====
+  const nameEl = $('#name');
+  const durationEl = $('#duration');
+  const alertInput = $('#alertInput');
+  const alertChips = $('#alertChips');
+  const addAlertBtn = $('#addAlert');
+  const clearAlertsBtn = $('#clearAlerts');
+  const soundSel = $('#sound');
+  const volumeEl = $('#volume');
+  const repeatEl = $('#repeat');
+  const notifyEl = $('#notify');
+  const customFileWrap = $('#customFileWrap');
+  const customFileEl = $('#customFile');
+  const testSoundBtn = $('#testSound');
+  const createBtn = $('#create');
+  const savePresetBtn = $('#savePreset');
+  const stopAlertBtn = $('#stopAlert');
+  const timerList = $('#timerList');
+  const presetList = $('#presetList');
+
+  // ===== Alerts UI =====
+  function renderAlerts(){
+    const arr = Array.from(state.alerts).sort((a,b)=>b-a);
+    alertChips.innerHTML = arr.map(v=>`<span class="chip" data-v="${v}">${fmt(v)} <button title="ลบ" aria-label="ลบ">✕</button></span>`).join('');
+    alertChips.querySelectorAll('button').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const v = parseInt(btn.parentElement.getAttribute('data-v'),10);
+        state.alerts.delete(v); renderAlerts();
+      })
+    })
+  }
+  renderAlerts();
+  function addAlertsFromInput(){
+    const raw = alertInput.value.trim();
+    if(!raw) return;
+    for(const part of raw.split(',')){
+      const sec = parseTimeToSec(part.trim());
+      if(sec>=0) state.alerts.add(sec);
+    }
+    alertInput.value=''; renderAlerts();
+  }
+  addAlertBtn.addEventListener('click', addAlertsFromInput);
+  alertInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); addAlertsFromInput(); }});
+  clearAlertsBtn.addEventListener('click', ()=>{ state.alerts.clear(); state.alerts.add(0); renderAlerts(); });
+
+  // ===== Sound selectors =====
+  soundSel.addEventListener('change', ()=>{
+    customFileWrap.style.display = soundSel.value==='custom' ? 'block' : 'none';
+  });
+  customFileEl.addEventListener('change', ()=>{
+    const f = customFileEl.files && customFileEl.files[0];
+    if(f){ if(customURL) URL.revokeObjectURL(customURL); customURL = URL.createObjectURL(f); }
+  });
+  testSoundBtn.addEventListener('click', async ()=>{
+    const vol = volumeEl.value/100;
+    if(soundSel.value==='custom'){ (await playCustomOnce(vol)).stop(); }
+    else if(soundSel.value==='thunder'){ (await playThunder(vol)).stop(); }
+    else { playBeepPattern(soundSel.value, vol).stop(); }
+  });
+
+  // ===== Notifications (global toggle for new timers) =====
+  notifyEl.addEventListener('change', async ()=>{
+    if(notifyEl.checked && 'Notification' in window){
+      if(Notification.permission==='default'){
+        try{ await Notification.requestPermission(); }catch(e){}
+      }
+      state.notify = Notification.permission==='granted';
+      if(!state.notify){
+        alert('เบราว์เซอร์ไม่ได้อนุญาตการแจ้งเตือน'); notifyEl.checked=false;
+      }
+    }else{
+      state.notify = false;
+    }
+  });
+
+  // ===== Presets =====
+  function currentFormPreset(){
+    return {
+      id: uid(),
+      name: nameEl.value || 'Cooldown',
+      durationSec: Math.max(1, parseTimeToSec(durationEl.value||'0')),
+      alerts: Array.from(state.alerts),
+      sound: soundSel.value,
+      volume: parseInt(volumeEl.value,10)/100,
+      repeat: !!repeatEl.checked,
+      notify: !!notifyEl.checked,
+      customName: customFileEl.files && customFileEl.files[0] ? customFileEl.files[0].name : null,
+    }
+  }
+  function renderPresets(){
+    if(!state.presets.length){
+      presetList.innerHTML = '<span class="subtitle">ยังไม่มีพรีเซ็ต</span>'; return;
+    }
+    presetList.innerHTML = state.presets.map(p=>{
+      return `<div class="preset" data-id="${p.id}">
+        <strong>${p.name}</strong>
+        <span class="subtitle">• ${fmt(p.durationSec)}</span>
+        <button class="btn btn-ghost" data-act="start">เริ่ม</button>
+        <button class="btn btn-ghost" data-act="fill">กรอกฟอร์ม</button>
+        <button class="btn btn-danger" data-act="del">ลบ</button>
+      </div>`;
+    }).join('');
+    presetList.querySelectorAll('.preset').forEach(el=>{
+      const id = el.getAttribute('data-id');
+      el.querySelector('[data-act="del"]').addEventListener('click', ()=>{
+        state.presets = state.presets.filter(x=>x.id!==id); savePresets();
+      });
+      el.querySelector('[data-act="fill"]').addEventListener('click', ()=>{
+        const p = state.presets.find(x=>x.id===id); if(!p) return;
+        nameEl.value = p.name;
+        durationEl.value = fmt(p.durationSec);
+        state.alerts = new Set(p.alerts||[0]); renderAlerts();
+        soundSel.value = p.sound||'beep'; soundSel.dispatchEvent(new Event('change'));
+        volumeEl.value = Math.round((p.volume||0.8)*100);
+        repeatEl.checked = !!p.repeat;
+        notifyEl.checked = !!p.notify;
+        if(p.sound==='custom'){ customFileWrap.style.display='block'; }
+      });
+      el.querySelector('[data-act="start"]').addEventListener('click', ()=>{
+        const p = state.presets.find(x=>x.id===id); if(!p) return;
+        createTimer({
+          name: p.name, durationSec: p.durationSec, alerts: p.alerts||[0],
+          sound: p.sound, volume: p.volume||0.8, repeat: !!p.repeat, notify: !!p.notify
+        })
+      });
+    })
+  }
+  renderPresets();
+  function savePresetsThenRender(){ savePresets(); }
+  savePresetBtn.addEventListener('click', ()=>{
+    const p = currentFormPreset();
+    state.presets.unshift({...p, id: uid()});
+    savePresetsThenRender();
+  });
+
+  // ===== Timer Logic =====
+  function createTimer(opts){
+    const t = {
+      id: uid(),
+      name: opts.name || 'Cooldown',
+      durationSec: Math.max(1, opts.durationSec|0),
+      remainingSec: Math.max(1, opts.durationSec|0),
+      endAt: null,
+      running: false,
+      repeat: !!opts.repeat,
+      alerts: (opts.alerts||[0]).filter(x=>x>=0).sort((a,b)=>b-a),
+      fired: {},
+      sound: opts.sound||'beep',
+      volume: typeof opts.volume==='number'?opts.volume:0.8,
+      notify: !!opts.notify,
+      mutedSound: false,          // ปิด/เปิดเสียงรายตัว
+    }
+    if(!t.alerts.includes(0)) t.alerts.push(0);
+    state.timers.unshift(t);
+    renderTimers();
+  }
+
+  function renderTimers(){
+    if(!state.timers.length){
+      timerList.innerHTML = '<div class="subtitle">ยังไม่มีตัวจับเวลา เริ่มจากฟอร์มด้านซ้าย</div>'; return;
+    }
+    timerList.innerHTML = state.timers.map(t=>{
+      const pct = 100*(1 - t.remainingSec/t.durationSec);
+      const cand = t.alerts.filter(a=>!t.fired[a] && t.remainingSec>=a);
+      const nextA = cand.length ? cand[cand.length-1] : 0;
+      return `<div class="tcard" tabindex="0" data-id="${t.id}">
+        <div class="hstack" style="justify-content:space-between">
+          <strong>${t.name}</strong>
+          <span class="subtitle">${t.running? 'กำลังเดิน' : 'หยุดอยู่'}</span>
+        </div>
+        <div class="time">${fmt(t.remainingSec)}</div>
+        <div class="progress"><div class="bar" style="width:${pct}%;"></div></div>
+        <div class="hstack" style="justify-content:space-between">
+          <span class="subtitle">จะแจ้งที่เหลือ: <strong>${fmt(nextA)}</strong></span>
+          <span class="subtitle">ทั้งหมด: ${fmt(t.durationSec)}</span>
+        </div>
+        <div class="row-btns">
+          <button class="btn btn-primary" data-act="toggle">${t.running? 'หยุดชั่วคราว' : 'เริ่ม'}</button>
+          <button class="btn btn-ghost" data-act="reset">รีเซ็ต</button>
+          <button class="btn btn-ghost" data-act="dup">ทำสำเนา</button>
+          <button class="btn btn-danger" data-act="del">ลบ</button>
+          <button class="btn btn-ghost" data-act="silence">หยุดเสียง</button>
+          <button class="btn ${t.mutedSound?'btn-warn':'btn-ghost'}" data-act="toggleMute">${t.mutedSound?'เปิดเสียง':'ปิดเสียง'}</button>
+          <button class="btn ${t.notify?'btn-warn':'btn-ghost'}" data-act="toggleNotify">${t.notify?'ปิดแจ้งเตือน':'เปิดแจ้งเตือน'}</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    // attach handlers
+    timerList.querySelectorAll('.tcard').forEach(el=>{
+      const id = el.getAttribute('data-id');
+      el.querySelector('[data-act="toggle"]').addEventListener('click', ()=>toggleTimer(id));
+      el.querySelector('[data-act="reset"]').addEventListener('click', ()=>resetTimer(id));
+      el.querySelector('[data-act="dup"]').addEventListener('click', ()=>duplicateTimer(id));
+      el.querySelector('[data-act="del"]').addEventListener('click', ()=>deleteTimer(id));
+      el.querySelector('[data-act="silence"]').addEventListener('click', ()=>stopTimerSound(id));
+      el.querySelector('[data-act="toggleMute"]').addEventListener('click', ()=>toggleMute(id));
+      el.querySelector('[data-act="toggleNotify"]').addEventListener('click', ()=>toggleNotify(id));
+      el.addEventListener('keydown', (e)=>{ if(e.code==='Space'){ e.preventDefault(); toggleTimer(id); }});
+    })
+  }
+
+  function toggleTimer(id){
+    const t = state.timers.find(x=>x.id===id); if(!t) return;
+    if(!t.running){ t.running = true; t.endAt = Date.now() + t.remainingSec*1000; }
+    else{ t.running = false; t.remainingSec = Math.max(0, Math.round((t.endAt - Date.now())/1000)); t.endAt = null; }
+    renderTimers();
+  }
+  function resetTimer(id){
+    const t = state.timers.find(x=>x.id===id); if(!t) return;
+    t.running=false; t.endAt=null; t.remainingSec=t.durationSec; t.fired={};
+    stopTimerSound(id);
+    renderTimers();
+  }
+  function deleteTimer(id){
+    stopTimerSound(id);
+    state.timers = state.timers.filter(x=>x.id!==id);
+    renderTimers();
+  }
+  function duplicateTimer(id){
+    const t = state.timers.find(x=>x.id===id); if(!t) return;
+    createTimer({...t});
+  }
+  function toggleMute(id){
+    const t = state.timers.find(x=>x.id===id); if(!t) return;
+    t.mutedSound = !t.mutedSound;
+    if(t.mutedSound) stopTimerSound(id); // ตัดเสียงทันทีถ้าเพิ่งปิดเสียง
+    renderTimers();
+  }
+  function toggleNotify(id){
+    const t = state.timers.find(x=>x.id===id); if(!t) return;
+    t.notify = !t.notify;
+    renderTimers();
+  }
+
+  // หยุดเสียงเฉพาะการ์ด
+  function stopTimerSound(id){
+    const handle = soundHandles.get(id);
+    if(handle && typeof handle.stop==='function'){ try{ handle.stop(); }catch(e){} }
+    soundHandles.delete(id);
+  }
+
+  // ปุ่มหยุดเสียงทั้งหมด
+  stopAlertBtn.addEventListener('click', ()=>{
+    for(const [id, handle] of soundHandles.entries()){
+      if(handle && typeof handle.stop==='function'){ try{ handle.stop(); }catch(e){} }
+    }
+    soundHandles.clear();
+  });
+
+  // Clock loop
+  setInterval(async ()=>{
+    let changed=false;
+    const now = Date.now();
+    for(const t of state.timers){
+      if(!t.running) continue;
+      const left = Math.max(0, (t.endAt - now)/1000);
+      const prev = t.remainingSec;
+      t.remainingSec = left;
+
+      // fire alerts (remaining <= a)
+      for(const a of t.alerts){
+        if(!t.fired[a] && left<=a && prev>a){
+          // SOUND
+          if(!t.mutedSound){
+            let handle;
+            if(t.sound==='custom') handle = await playCustomOnce(t.volume);
+            else if(t.sound==='thunder') handle = await playThunder(t.volume);
+            else handle = playBeepPattern(t.sound, t.volume);
+            // เก็บ handle ไว้หยุดรายตัวได้
+            stopTimerSound(t.id); // ถ้ามีค้างเดิมอยู่ให้ตัดก่อน
+            soundHandles.set(t.id, handle);
+          }
+          // NOTIFY
+          if(t.notify && 'Notification' in window){
+            try{
+              if(Notification.permission==='granted'){
+                new Notification(`${t.name}`, { body: a===0? 'ครบเวลาแล้ว!' : `เหลือ ${fmt(a)}`, silent:false });
+              }
+            }catch(e){}
+          }
+          t.fired[a]=true;
+        }
+      }
+
+      if(left<=0){
+        t.running=false; t.endAt=null;
+        if(t.repeat){
+          t.fired={}; t.remainingSec=t.durationSec; t.running=true; t.endAt=Date.now()+t.durationSec*1000;
+        }
+      }
+      changed=true;
+    }
+    if(changed) renderTimers();
+  }, 200);
+
+  // Create timer from form
+  createBtn.addEventListener('click', ()=>{
+    const duration = parseTimeToSec(durationEl.value);
+    if(!duration || duration<=0){ alert('กรุณากรอกระยะเวลาให้ถูกต้อง'); return; }
+    const alerts = Array.from(state.alerts).filter(x=>x<=duration && x>=0);
+    createTimer({
+      name: nameEl.value || 'Cooldown',
+      durationSec: duration,
+      alerts,
+      sound: soundSel.value,
+      volume: parseInt(volumeEl.value,10)/100,
+      repeat: !!repeatEl.checked,
+      notify: !!notifyEl.checked,
+    });
+  });
+
+})();
+</script>
+
+</body>
+</html>
